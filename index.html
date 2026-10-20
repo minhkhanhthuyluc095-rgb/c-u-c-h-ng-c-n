@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Câu Cá Hạng Cân - Aura & Power Edition</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #e0f7fa; padding: 20px; }
+    .card { background: white; border-radius: 10px; padding: 15px; margin: 10px auto; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #00838f; color: white; margin: 5px; }
+    button:disabled { background: #ccc; }
+    .stats { font-weight: bold; font-size: 16px; color: #006064; }
+    .log { background: #f1f8e9; border: 1px solid #c5e1a5; padding: 10px; border-radius: 5px; height: 120px; overflow-y: auto; text-align: left; }
+  </style>
+</head>
+<body>
+
+  <h1>🎣 Câu Cá Hạng Cân</h1>
+
+  <!-- Dashboard Thông số -->
+  <div class="card">
+    <p class="stats">✨ Aura: <span id="aura-count">0</span> | ⚡ Sức Mạnh: <span id="power-count">100</span></p>
+    <p>👤 Nhân vật: <strong id="char-name">Ngư Dân Tập Sự</strong></p>
+    <p>🎣 Cấp Cần Câu: <span id="rod-level">1</span></p>
+  </div>
+
+  <!-- Chọn Nhân Vật -->
+  <div class="card">
+    <h3>👥 Chọn Nhân Vật & Hạng Cân</h3>
+    <button onclick="selectCharacter(0)">Ngư Dân</button>
+    <button onclick="selectCharacter(1)">Thần Tài</button>
+    <button onclick="selectCharacter(2)">Lão Chài</button>
+    <button onclick="selectCharacter(3)">Long Vương</button>
+  </div>
+
+  <!-- Hành Động -->
+  <div class="card">
+    <button onclick="fish()">🎣 Thả Câu Giật Cá!</button>
+    <button onclick="upgradeRod()">⬆️ Nâng Cần (Tốn <span id="upgrade-cost">50</span> Aura)</button>
+    <br>
+    <button onclick="trainPower()" style="background: #d84315;">🏋️ Luyện Sức Mạnh (Tốn 100 Aura)</button>
+  </div>
+
+  <!-- Nhật ký -->
+  <div class="card">
+    <h3>📜 Nhật Ký Hạng Cân</h3>
+    <div id="log" class="log"></div>
+  </div>
+
+  <script>
+    let state = {
+      aura: 0,
+      power: 100,
+      rodLevel: 1,
+      upgradeCost: 50,
+      currentCharIndex: 0
+    };
+
+    // 4 Nhân vật với thông số Aura và Sức mạnh riêng
+    const CHARACTERS = [
+      { name: "Ngư Dân Tập Sự", auraMult: 1.0, luckBonus: 0, weightBonus: 1.0, basePowerGain: 10 },
+      { name: "Thần Tài Bãi Cùng", auraMult: 1.2, luckBonus: 0, weightBonus: 1.0, basePowerGain: 12 },
+      { name: "Lão Chài Đại Dương", auraMult: 1.0, luckBonus: 0.15, weightBonus: 1.0, basePowerGain: 15 },
+      { name: "Long Vương Tái Xung", auraMult: 1.0, luckBonus: 0, weightBonus: 1.5, basePowerGain: 25 }
+    ];
+
+    const FISH_DATABASE = [
+      { name: "Cá Chép Bạc", rarity: "Thường", baseAura: 10, baseWeight: 10, requiredPower: 50 },
+      { name: "Cá Lóc Hoàng Kim", rarity: "Hiếm", baseAura: 50, baseWeight: 100, requiredPower: 200 },
+      { name: "Cá Mập Vạn Cân", rarity: "Huyền Thoại", baseAura: 300, baseWeight: 10000, requiredPower: 500 }
+    ];
+
+    function selectCharacter(index) {
+      state.currentCharIndex = index;
+      document.getElementById("char-name").innerText = CHARACTERS[index].name;
+      addLog(`Đổi nhân vật sang: <b>${CHARACTERS[index].name}</b>`);
+    }
+
+    function fish() {
+      const char = CHARACTERS[state.currentCharIndex];
+      
+      // Kiểm tra sức mạnh để mở khóa các hạng cân cá lớn hơn
+      let availableFish = FISH_DATABASE.filter(f => state.power >= f.requiredPower);
+      if (availableFish.length === 0) availableFish = [FISH_DATABASE[0]];
+
+      let fishType = availableFish[Math.floor(Math.random() * availableFish.length)];
+      let weight = Math.floor(fishType.baseWeight * (Math.random() * 0.5 + 0.8) * char.weightBonus * state.rodLevel);
+      let earnedAura = Math.floor(fishType.baseAura * (weight / 10) * char.auraMult * (1 + state.rodLevel * 0.1));
+
+      state.aura += earnedAura;
+
+      document.getElementById("aura-count").innerText = state.aura.toLocaleString();
+      addLog(`🐟 Câu được <b>${fishType.name}</b> (${weight.toLocaleString()} cân)! Nhận +<b>${earnedAura}</b> Aura.`);
+    }
+
+    function trainPower() {
+      const cost = 100;
+      const char = CHARACTERS[state.currentCharIndex];
+      if (state.aura >= cost) {
+        state.aura -= cost;
+        let powerGained = char.basePowerGain * state.rodLevel;
+        state.power += powerGained;
+
+        document.getElementById("aura-count").innerText = state.aura.toLocaleString();
+        document.getElementById("power-count").innerText = state.power.toLocaleString();
+        addLog(`🏋️ Luyện tập thành công! Sức mạnh tăng +<b>${powerGained}</b> (Tổng: ${state.power})`);
+      } else {
+        alert("Không đủ Aura để luyện sức mạnh hạng cân!");
+      }
+    }
+
+    function upgradeRod() {
+      if (state.aura >= state.upgradeCost) {
+        state.aura -= state.upgradeCost;
+        state.rodLevel++;
+        state.upgradeCost = Math.floor(state.upgradeCost * 1.8);
+
+        document.getElementById("aura-count").innerText = state.aura.toLocaleString();
+        document.getElementById("rod-level").innerText = state.rodLevel;
+        document.getElementById("upgrade-cost").innerText = state.upgradeCost.toLocaleString();
+        
+        addLog(`⚡ Cần câu nâng lên cấp ${state.rodLevel}!`);
+      } else {
+        alert("Không đủ Aura để nâng cấp cần!");
+      }
+    }
+
+    function addLog(message) {
+      const logDiv = document.getElementById("log");
+      logDiv.innerHTML = `<p style="margin:4px 0;">${message}</p>` + logDiv.innerHTML;
+    }
+  </script>
+</body>
+</html>
