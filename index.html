@@ -1,133 +1,926 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Câu Cá Hạng Cân - Aura & Power Edition</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #e0f7fa; padding: 20px; }
-    .card { background: white; border-radius: 10px; padding: 15px; margin: 10px auto; max-width: 500px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; background: #00838f; color: white; margin: 5px; }
-    button:disabled { background: #ccc; }
-    .stats { font-weight: bold; font-size: 16px; color: #006064; }
-    .log { background: #f1f8e9; border: 1px solid #c5e1a5; padding: 10px; border-radius: 5px; height: 120px; overflow-y: auto; text-align: left; }
-  </style>
-</head>
-<body>
-
-  <h1>🎣 Câu Cá Hạng Cân</h1>
-
-  <!-- Dashboard Thông số -->
-  <div class="card">
-    <p class="stats">✨ Aura: <span id="aura-count">0</span> | ⚡ Sức Mạnh: <span id="power-count">100</span></p>
-    <p>👤 Nhân vật: <strong id="char-name">Ngư Dân Tập Sự</strong></p>
-    <p>🎣 Cấp Cần Câu: <span id="rod-level">1</span></p>
-  </div>
-
-  <!-- Chọn Nhân Vật -->
-  <div class="card">
-    <h3>👥 Chọn Nhân Vật & Hạng Cân</h3>
-    <button onclick="selectCharacter(0)">Ngư Dân</button>
-    <button onclick="selectCharacter(1)">Thần Tài</button>
-    <button onclick="selectCharacter(2)">Lão Chài</button>
-    <button onclick="selectCharacter(3)">Long Vương</button>
-  </div>
-
-  <!-- Hành Động -->
-  <div class="card">
-    <button onclick="fish()">🎣 Thả Câu Giật Cá!</button>
-    <button onclick="upgradeRod()">⬆️ Nâng Cần (Tốn <span id="upgrade-cost">50</span> Aura)</button>
-    <br>
-    <button onclick="trainPower()" style="background: #d84315;">🏋️ Luyện Sức Mạnh (Tốn 100 Aura)</button>
-  </div>
-
-  <!-- Nhật ký -->
-  <div class="card">
-    <h3>📜 Nhật Ký Hạng Cân</h3>
-    <div id="log" class="log"></div>
-  </div>
-
-  <script>
-    let state = {
-      aura: 0,
-      power: 100,
-      rodLevel: 1,
-      upgradeCost: 50,
-      currentCharIndex: 0
-    };
-
-    // 4 Nhân vật với thông số Aura và Sức mạnh riêng
-    const CHARACTERS = [
-      { name: "Ngư Dân Tập Sự", auraMult: 1.0, luckBonus: 0, weightBonus: 1.0, basePowerGain: 10 },
-      { name: "Thần Tài Bãi Cùng", auraMult: 1.2, luckBonus: 0, weightBonus: 1.0, basePowerGain: 12 },
-      { name: "Lão Chài Đại Dương", auraMult: 1.0, luckBonus: 0.15, weightBonus: 1.0, basePowerGain: 15 },
-      { name: "Long Vương Tái Xung", auraMult: 1.0, luckBonus: 0, weightBonus: 1.5, basePowerGain: 25 }
-    ];
-
-    const FISH_DATABASE = [
-      { name: "Cá Chép Bạc", rarity: "Thường", baseAura: 10, baseWeight: 10, requiredPower: 50 },
-      { name: "Cá Lóc Hoàng Kim", rarity: "Hiếm", baseAura: 50, baseWeight: 100, requiredPower: 200 },
-      { name: "Cá Mập Vạn Cân", rarity: "Huyền Thoại", baseAura: 300, baseWeight: 10000, requiredPower: 500 }
-    ];
-
-    function selectCharacter(index) {
-      state.currentCharIndex = index;
-      document.getElementById("char-name").innerText = CHARACTERS[index].name;
-      addLog(`Đổi nhân vật sang: <b>${CHARACTERS[index].name}</b>`);
-    }
-
-    function fish() {
-      const char = CHARACTERS[state.currentCharIndex];
-      
-      // Kiểm tra sức mạnh để mở khóa các hạng cân cá lớn hơn
-      let availableFish = FISH_DATABASE.filter(f => state.power >= f.requiredPower);
-      if (availableFish.length === 0) availableFish = [FISH_DATABASE[0]];
-
-      let fishType = availableFish[Math.floor(Math.random() * availableFish.length)];
-      let weight = Math.floor(fishType.baseWeight * (Math.random() * 0.5 + 0.8) * char.weightBonus * state.rodLevel);
-      let earnedAura = Math.floor(fishType.baseAura * (weight / 10) * char.auraMult * (1 + state.rodLevel * 0.1));
-
-      state.aura += earnedAura;
-
-      document.getElementById("aura-count").innerText = state.aura.toLocaleString();
-      addLog(`🐟 Câu được <b>${fishType.name}</b> (${weight.toLocaleString()} cân)! Nhận +<b>${earnedAura}</b> Aura.`);
-    }
-
-    function trainPower() {
-      const cost = 100;
-      const char = CHARACTERS[state.currentCharIndex];
-      if (state.aura >= cost) {
-        state.aura -= cost;
-        let powerGained = char.basePowerGain * state.rodLevel;
-        state.power += powerGained;
-
-        document.getElementById("aura-count").innerText = state.aura.toLocaleString();
-        document.getElementById("power-count").innerText = state.power.toLocaleString();
-        addLog(`🏋️ Luyện tập thành công! Sức mạnh tăng +<b>${powerGained}</b> (Tổng: ${state.power})`);
-      } else {
-        alert("Không đủ Aura để luyện sức mạnh hạng cân!");
-      }
-    }
-
-    function upgradeRod() {
-      if (state.aura >= state.upgradeCost) {
-        state.aura -= state.upgradeCost;
-        state.rodLevel++;
-        state.upgradeCost = Math.floor(state.upgradeCost * 1.8);
-
-        document.getElementById("aura-count").innerText = state.aura.toLocaleString();
-        document.getElementById("rod-level").innerText = state.rodLevel;
-        document.getElementById("upgrade-cost").innerText = state.upgradeCost.toLocaleString();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Câu Cá Hạng Cân 3D - Ultra Realism Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Roboto:wght@400;700;900&display=swap');
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            user-select: none;
+            background-color: #030712;
+            color: #fff;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
         
-        addLog(`⚡ Cần câu nâng lên cấp ${state.rodLevel}!`);
-      } else {
-        alert("Không đủ Aura để nâng cấp cần!");
-      }
-    }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
 
-    function addLog(message) {
-      const logDiv = document.getElementById("log");
-      logDiv.innerHTML = `<p style="margin:4px 0;">${message}</p>` + logDiv.innerHTML;
-    }
-  </script>
+        .btn-neon-orange {
+            background: linear-gradient(135deg, #ff6b00 0%, #ea580c 100%);
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
+            border: 1px solid #ff9d5c;
+        }
+        .btn-neon-orange:active { transform: scale(0.95); }
+
+        .btn-neon-blue {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.5);
+            border: 1px solid #38bdf8;
+        }
+
+        .btn-neon-purple {
+            background: linear-gradient(135deg, #9333ea 0%, #6b21a8 100%);
+            box-shadow: 0 0 22px rgba(147, 51, 234, 0.6);
+            border: 1px solid #c084fc;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-3px, -2px) rotate(-1deg); }
+            40% { transform: translate(3px, 1px) rotate(1deg); }
+            60% { transform: translate(-2px, -1px) rotate(0deg); }
+            80% { transform: translate(2px, 2px) rotate(1deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        .shake-active { animation: shake 0.15s infinite; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+    <!-- 3D Canvas Renderer -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full"></div>
+
+    <!-- UI OVERLAY LAYER -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6">
+        
+        <!-- TOP HUD: AURA CURRENCY & SELECTION BUTTONS -->
+        <div class="flex flex-wrap justify-between items-start gap-4 pointer-events-auto">
+            <!-- Aura Currency Display -->
+            <div class="glass-panel rounded-2xl p-3 px-5 flex items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-400 text-2xl font-bold shadow-inner">
+                        <i class="fa-solid fa-gem"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Tiền Aura</div>
+                        <div id="aura-count" class="text-2xl font-black text-amber-300 font-orbitron">100</div>
+                    </div>
+                </div>
+                <div class="h-8 w-px bg-white/15"></div>
+                <div>
+                    <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Nhân Vật</div>
+                    <div id="current-char-name" class="text-sm font-bold text-cyan-400 font-orbitron">Tiểu Tèo</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2">
+                <button onclick="toggleModal('modal-char')" class="glass-panel hover:bg-white/10 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-user-ninja text-purple-400"></i>
+                    <span class="hidden sm:inline">Nhân Vật</span>
+                </button>
+                <button onclick="toggleModal('modal-shop')" class="glass-panel hover:bg-white/10 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-store text-amber-400"></i>
+                    <span class="hidden sm:inline">Cửa Hàng</span>
+                </button>
+                <button onclick="toggleModal('modal-map')" class="glass-panel hover:bg-white/10 text-white font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-map-location-dot text-emerald-400"></i>
+                    <span class="hidden sm:inline">Đổi Map</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- FISHING REEL TENSION HUD -->
+        <div id="fishing-hud" class="hidden self-center w-full max-w-md glass-panel p-5 rounded-3xl flex-col gap-3 pointer-events-auto">
+            <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider">
+                <span id="fish-target-name" class="text-amber-400 font-orbitron text-sm">Cá Thu</span>
+                <span id="fish-distance" class="text-cyan-300 font-orbitron text-sm">Khoảng Cách: 50m</span>
+            </div>
+
+            <!-- Tension Meter Bar -->
+            <div class="relative w-full h-8 bg-gray-950/90 rounded-full overflow-hidden p-1 border border-white/20">
+                <div class="absolute top-1 bottom-1 bg-emerald-500/25 border-x-2 border-emerald-400 rounded transition-all duration-300" style="left: 30%; width: 40%;"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-[20%] bg-red-600/30 border-l border-red-500"></div>
+                <div id="tension-bar" class="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-red-500 rounded-full w-0 transition-all duration-75"></div>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-gray-400 font-bold px-1">
+                <span>AN TOÀN</span>
+                <span class="text-emerald-400">GIỮ TRONG VÙNG XANH</span>
+                <span class="text-red-400">ĐỨT DÂY!</span>
+            </div>
+
+            <!-- Reeling Control Buttons -->
+            <div class="grid grid-cols-2 gap-3 mt-1">
+                <button id="btn-pull" class="btn-neon-orange font-orbitron font-black text-lg py-3.5 rounded-2xl text-white shadow-lg flex items-center justify-center gap-2 select-none">
+                    <i class="fa-solid fa-hand-fist"></i> GIỮ KÉO!
+                </button>
+                <button id="btn-ult" disabled class="btn-neon-purple font-orbitron font-black text-lg py-3.5 rounded-2xl text-white opacity-40 cursor-not-allowed flex items-center justify-center gap-2 select-none transition">
+                    <i class="fa-solid fa-bolt text-yellow-300"></i> BÙM! (ULT)
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION CONTROLS -->
+        <div class="flex justify-between items-end pointer-events-auto">
+            <div class="flex gap-2">
+                <button id="btn-move-left" class="glass-panel w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold active:bg-white/20">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <button id="btn-move-right" class="glass-panel w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold active:bg-white/20">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <button id="btn-cast" onclick="handleCast()" class="btn-neon-blue font-orbitron font-black text-xl px-8 py-4 rounded-2xl text-white tracking-wider flex items-center gap-3">
+                <i class="fa-solid fa-water font-normal"></i> QUĂNG CẦN
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 1: CHARACTERS -->
+    <div id="modal-char" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+                <h2 class="text-2xl font-black font-orbitron text-cyan-400"><i class="fa-solid fa-users me-2"></i>Chọn Nhân Vật</h2>
+                <button onclick="toggleModal('modal-char')" class="text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto p-1" id="char-grid"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: SHOP -->
+    <div id="modal-shop" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+                <h2 class="text-2xl font-black font-orbitron text-amber-400"><i class="fa-solid fa-store me-2"></i>Cửa Hàng Vạn Cân</h2>
+                <button onclick="toggleModal('modal-shop')" class="text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex gap-4 mb-4 border-b border-white/10">
+                <button id="tab-btn-rods" onclick="switchShopTab('rods')" class="pb-2 font-bold border-b-2 border-amber-400 text-amber-400">Cần Câu</button>
+                <button id="tab-btn-baits" onclick="switchShopTab('baits')" class="pb-2 font-bold text-gray-400 hover:text-white">Mồi Câu</button>
+            </div>
+            <div id="shop-content-rods" class="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto p-1"></div>
+            <div id="shop-content-baits" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto p-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MAPS -->
+    <div id="modal-map" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl p-6 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+                <h2 class="text-2xl font-black font-orbitron text-emerald-400"><i class="fa-solid fa-map-location-dot me-2"></i>Chọn Map 3D</h2>
+                <button onclick="toggleModal('modal-map')" class="text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 gap-4 overflow-y-auto p-1" id="map-grid"></div>
+        </div>
+    </div>
+
+    <!-- CATCH CELEBRATION BUM OVERLAY -->
+    <div id="catch-overlay" class="hidden fixed inset-0 z-50 pointer-events-none flex items-center justify-center flex-col">
+        <div id="bum-text" class="text-7xl md:text-9xl font-black font-orbitron text-yellow-300 drop-shadow-[0_0_40px_rgba(255,215,0,1)] animate-bounce transform -rotate-6">
+            BÙM!
+        </div>
+        <div id="catch-card" class="glass-panel p-6 rounded-3xl mt-4 text-center border-2 border-amber-400 scale-0 transition-transform duration-300 max-w-sm w-full mx-4">
+            <div id="catch-tier" class="text-xs font-bold font-orbitron tracking-widest uppercase px-3 py-1 rounded-full inline-block mb-2 bg-amber-500/20 text-amber-300 border border-amber-400">LEGEND</div>
+            <h3 id="catch-name" class="text-2xl font-black text-white">CÁ NHÀ TÁNG CỔ ĐẠI</h3>
+            <p id="catch-weight" class="text-gray-300 font-semibold my-1">Trọng lượng: 12,500 KG</p>
+            <div class="flex items-center justify-center gap-2 my-3 text-amber-300 font-bold text-xl">
+                <i class="fa-solid fa-gem"></i> <span id="catch-aura">+1000 Aura</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SYNTHESIS -->
+    <script>
+        const AudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSfx(type) {
+            if (AudioCtx.state === 'suspended') AudioCtx.resume();
+            const osc = AudioCtx.createOscillator();
+            const gain = AudioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(AudioCtx.destination);
+
+            const now = AudioCtx.currentTime;
+            if (type === 'cast') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.35);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
+            } else if (type === 'catch') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.7);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+                osc.start(now); osc.stop(now + 0.7);
+            } else if (type === 'ult') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.linearRampToValueAtTime(900, now + 0.25);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(750, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            }
+        }
+    </script>
+
+    <!-- MAIN ENGINE & REALISTIC THREE.JS LOGIC -->
+    <script>
+        /* CONFIGURATION DATA */
+        const CHARACTERS = [
+            { id: 'teo', name: 'Tiểu Tèo', desc: 'Trẻ trung, nhiệt huyết, di chuyển linh hoạt.', luck: 0, power: 0, legendBonus: 0, color: 0x2563eb },
+            { id: 'ly', name: 'Tiểu Lý', desc: 'Thợ câu khéo léo. Tỷ lệ May mắn +20%.', luck: 0.20, power: 0, legendBonus: 0, color: 0x059669 },
+            { id: 'ha', name: 'Ông Hạ', desc: 'Lão ngư kỳ cựu. Lực kéo vạn cân +30%.', luck: 0, power: 0.30, legendBonus: 0, color: 0xd97706 },
+            { id: 'tin', name: 'Lý Tín', desc: 'Huyền thoại câu biển. Tỷ lệ Legend +50%.', luck: 0.10, power: 0.20, legendBonus: 0.50, color: 0x7c3aed }
+        ];
+
+        const RODS = [
+            { id: 'rod_bamboo', name: 'Cần Trúc Cổ Hiển', power: 10, flex: 0.3, cost: 0, color: 0xb45309 },
+            { id: 'rod_carbon', name: 'Cần Carbon Siêu Bền', power: 28, flex: 0.5, cost: 50, color: 0x334155 },
+            { id: 'rod_titanium', name: 'Cần Titanium Biển Sâu', power: 60, flex: 0.8, cost: 200, color: 0x0284c7 },
+            { id: 'rod_ancient', name: 'Cần Vạn Cân Huyền Thoại', power: 140, flex: 1.2, cost: 1000, color: 0xd97706 }
+        ];
+
+        const BAITS = [
+            { id: 'bait_worm', name: 'Mồi Giun Đất', legendBoost: 1.0, cost: 0, desc: 'Mồi truyền thống.' },
+            { id: 'bait_shrimp', name: 'Mồi Tôm Biển', legendBoost: 1.5, cost: 20, desc: '+50% cơ hội cá hiếm/epic.' },
+            { id: 'bait_platinum', name: 'Mồi Bạch Kim', legendBoost: 2.5, cost: 100, desc: 'Thu hút cá Mythic mạnh mẽ.' },
+            { id: 'bait_ancient', name: 'Mồi Cổ Đại', legendBoost: 5.0, cost: 300, desc: 'Đặc trị Cá Nhà Táng Cổ Đại!' }
+        ];
+
+        const MAPS = [
+            { id: 'map_starter', name: 'Bãi Khởi Đầu', desc: 'Bãi cát vàng thơ mộng, dừa xanh mát và đá ven biển.', bgColor: 0x38bdf8, oceanColor: 0x0284c7, sandColor: 0xebd2b0, fogDensity: 0.008, envType: 'beach' },
+            { id: 'map_deep', name: 'Biển Sâu Bão Đêm', desc: 'Hải đăng trầm mặc, biển đêm sương mờ và sóng ngầm.', bgColor: 0x0f172a, oceanColor: 0x1e293b, sandColor: 0x334155, fogDensity: 0.02, envType: 'deep' },
+            { id: 'map_volcano', name: 'Biển Nham Thạch', desc: 'Nham thạch rực lửa, bão tro bụi và sóng nhiệt.', bgColor: 0x450a0a, oceanColor: 0x991b1b, sandColor: 0x18181b, fogDensity: 0.015, envType: 'volcano' }
+        ];
+
+        const FISH_SPECIES = [
+            { name: 'Cá Thu', tier: 'Hiếm', aura: 7, baseWeight: 12, color: 0x60a5fa },
+            { name: 'Cá Hồi', tier: 'Hiếm', aura: 7, baseWeight: 16, color: 0xf87171 },
+            { name: 'Cá Rônan', tier: 'Hiếm', aura: 7, baseWeight: 10, color: 0x34d399 },
+            { name: 'Cá Kiếm', tier: 'Epic', aura: 18, baseWeight: 88, color: 0xc084fc },
+            { name: 'Cá Heo', tier: 'Epic', aura: 18, baseWeight: 130, color: 0x38bdf8 },
+            { name: 'Cá Bò', tier: 'Epic', aura: 18, baseWeight: 65, color: 0xfacc15 },
+            { name: 'Cá Ngựa', tier: 'Mythic', aura: 60, baseWeight: 260, color: 0xf43f5e },
+            { name: 'Cá Ngựa Đỏ', tier: 'Mythic', aura: 60, baseWeight: 320, color: 0xd97706 },
+            { name: 'CÁ NHÀ TÁNG CỔ ĐẠI', tier: 'Legend', aura: 1000, baseWeight: 12800, color: 0xf59e0b }
+        ];
+
+        /* GAME STATE */
+        let state = {
+            aura: 100,
+            currentChar: CHARACTERS[0],
+            currentRod: RODS[0],
+            currentBait: BAITS[0],
+            currentMap: MAPS[0],
+            charPositionX: 0,
+            isFishing: false,
+            isReeling: false,
+            tension: 20,
+            fishDistance: 50,
+            targetFish: null,
+            ultCharge: 0,
+            unlockedRods: ['rod_bamboo']
+        };
+
+        /* THREE.JS ENGINE VARIABLES */
+        let scene, camera, renderer;
+        let characterGroup, rodMesh, rodTip, fishingLine, floatBobber, oceanMesh, envPropsGroup;
+        let leftLeg, rightLeg, torso, head, rightArm, leftArm;
+        let keyState = {};
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(state.currentMap.bgColor);
+            scene.fog = new THREE.FogExp2(state.currentMap.bgColor, state.currentMap.fogDensity);
+
+            // 3/4 SIDE PROFILE CAMERA
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(15, 6, 16);
+            camera.lookAt(0, 2, -6);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Lighting setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            sunLight.position.set(25, 40, 25);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+
+            envPropsGroup = new THREE.Group();
+            scene.add(envPropsGroup);
+
+            buildEnvironment();
+            buildRiggedCharacter();
+            buildFishingLine();
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('keydown', (e) => { keyState[e.key.toLowerCase()] = true; });
+            window.addEventListener('keyup', (e) => { keyState[e.key.toLowerCase()] = false; });
+
+            animate();
+        }
+
+        /* REALISTIC ENVIRONMENT & SCENERY BUILDER */
+        function buildEnvironment() {
+            // Clear existing terrain
+            const oldOcean = scene.getObjectByName("ocean");
+            if (oldOcean) scene.remove(oldOcean);
+            const oldShore = scene.getObjectByName("shore");
+            if (oldShore) scene.remove(oldShore);
+            
+            while(envPropsGroup.children.length > 0) { 
+                envPropsGroup.remove(envPropsGroup.children[0]); 
+            }
+
+            // Realistic Ocean Shader/Plane
+            const oceanGeo = new THREE.PlaneGeometry(300, 300, 64, 64);
+            const oceanMat = new THREE.MeshStandardMaterial({
+                color: state.currentMap.oceanColor,
+                roughness: 0.1,
+                metalness: 0.8,
+                transparent: true,
+                opacity: 0.9
+            });
+            oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+            oceanMesh.rotation.x = -Math.PI / 2;
+            oceanMesh.position.set(0, 0, -60);
+            oceanMesh.name = "ocean";
+            scene.add(oceanMesh);
+
+            // Shoreline / Terrain Coast
+            const shoreGeo = new THREE.BoxGeometry(30, 2, 10);
+            const shoreMat = new THREE.MeshStandardMaterial({ color: state.currentMap.sandColor, roughness: 0.9 });
+            const shore = new THREE.Mesh(shoreGeo, shoreMat);
+            shore.position.set(0, -1, 1);
+            shore.receiveShadow = true;
+            shore.castShadow = true;
+            shore.name = "shore";
+            scene.add(shore);
+
+            // MAP-SPECIFIC DYNAMIC PROPS
+            if (state.currentMap.envType === 'beach') {
+                // Palm Trees & Beach Rocks
+                for (let i = -12; i <= 12; i += 6) {
+                    if (Math.abs(i) < 3) continue;
+                    const palm = createPalmTree();
+                    palm.position.set(i + (Math.random() - 0.5), 0, 3 + Math.random());
+                    envPropsGroup.add(palm);
+                }
+                for (let i = 0; i < 8; i++) {
+                    const rockGeo = new THREE.DodecahedronGeometry(0.6 + Math.random() * 0.8);
+                    const rockMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+                    const rock = new THREE.Mesh(rockGeo, rockMat);
+                    rock.position.set((Math.random() - 0.5) * 20, 0, -1.5 + Math.random() * 2);
+                    envPropsGroup.add(rock);
+                }
+            } else if (state.currentMap.envType === 'deep') {
+                // Lighthouse in distance
+                const lighthouse = createLighthouse();
+                lighthouse.position.set(-25, 0, -40);
+                envPropsGroup.add(lighthouse);
+            } else if (state.currentMap.envType === 'volcano') {
+                // Volcanic Rocks & Lava Embers
+                for (let i = 0; i < 12; i++) {
+                    const rockGeo = new THREE.IcosahedronGeometry(0.8 + Math.random());
+                    const rockMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9 });
+                    const rock = new THREE.Mesh(rockGeo, rockMat);
+                    rock.position.set((Math.random() - 0.5) * 24, 0, -2 + Math.random() * 3);
+                    envPropsGroup.add(rock);
+                }
+            }
+
+            scene.background = new THREE.Color(state.currentMap.bgColor);
+            scene.fog.color = new THREE.Color(state.currentMap.bgColor);
+            scene.fog.density = state.currentMap.fogDensity;
+        }
+
+        function createPalmTree() {
+            const group = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.35, 4, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2;
+            trunk.rotation.z = (Math.random() - 0.5) * 0.2;
+            group.add(trunk);
+
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5, side: THREE.DoubleSide });
+            for (let i = 0; i < 5; i++) {
+                const leafGeo = new THREE.PlaneGeometry(1.2, 3);
+                const leaf = new THREE.Mesh(leafGeo, leafMat);
+                leaf.position.set(0, 4, 0);
+                leaf.rotation.x = Math.PI / 3;
+                leaf.rotation.y = (i * Math.PI * 2) / 5;
+                group.add(leaf);
+            }
+            return group;
+        }
+
+        function createLighthouse() {
+            const group = new THREE.Group();
+            const baseGeo = new THREE.CylinderGeometry(2, 3, 16, 12);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.position.y = 8;
+            group.add(base);
+
+            const topGeo = new THREE.CylinderGeometry(2.2, 2.2, 3, 12);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+            const top = new THREE.Mesh(topGeo, topMat);
+            top.position.y = 17.5;
+            group.add(top);
+            return group;
+        }
+
+        /* REALISTIC RIGGED HUMANOID CHARACTER & ROD */
+        function buildRiggedCharacter() {
+            if (characterGroup) scene.remove(characterGroup);
+
+            characterGroup = new THREE.Group();
+
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfdba74, roughness: 0.6 });
+            const clothMat = new THREE.MeshStandardMaterial({ color: state.currentChar.color, roughness: 0.5 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+
+            // Torso
+            const torsoGeo = new THREE.BoxGeometry(0.9, 1.3, 0.55);
+            torso = new THREE.Mesh(torsoGeo, clothMat);
+            torso.position.y = 1.65;
+            torso.castShadow = true;
+            characterGroup.add(torso);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.38, 16, 16);
+            head = new THREE.Mesh(headGeo, skinMat);
+            head.position.set(0, 2.6, 0);
+            head.castShadow = true;
+            characterGroup.add(head);
+
+            // Articulated Legs
+            const legGeo = new THREE.CylinderGeometry(0.18, 0.15, 1.2);
+            leftLeg = new THREE.Mesh(legGeo, pantsMat);
+            leftLeg.position.set(-0.25, 0.6, 0);
+            leftLeg.castShadow = true;
+            characterGroup.add(leftLeg);
+
+            rightLeg = new THREE.Mesh(legGeo, pantsMat);
+            rightLeg.position.set(0.25, 0.6, 0);
+            rightLeg.castShadow = true;
+            characterGroup.add(rightLeg);
+
+            // Arms holding rod
+            const armGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.95);
+            
+            rightArm = new THREE.Group();
+            rightArm.position.set(0.55, 2.1, 0);
+            const rArmMesh = new THREE.Mesh(armGeo, clothMat);
+            rArmMesh.position.y = -0.4;
+            rArmMesh.rotation.z = -Math.PI / 3.5;
+            rightArm.add(rArmMesh);
+            characterGroup.add(rightArm);
+
+            leftArm = new THREE.Group();
+            leftArm.position.set(-0.55, 2.1, 0);
+            const lArmMesh = new THREE.Mesh(armGeo, clothMat);
+            lArmMesh.position.y = -0.4;
+            lArmMesh.rotation.z = Math.PI / 4;
+            leftArm.add(lArmMesh);
+            characterGroup.add(leftArm);
+
+            // REALISTIC FLEXIBLE 3D ROD
+            const rodMat = new THREE.MeshStandardMaterial({ color: state.currentRod.color, roughness: 0.2, metalness: 0.8 });
+            const rodGeo = new THREE.CylinderGeometry(0.03, 0.08, 5.0, 16);
+            rodMesh = new THREE.Mesh(rodGeo, rodMat);
+            rodMesh.position.set(0.5, 2.2, -1.2);
+            rodMesh.rotation.x = Math.PI / 3;
+            characterGroup.add(rodMesh);
+
+            rodTip = new THREE.Object3D();
+            rodTip.position.set(0, 2.5, -2.2);
+            rodMesh.add(rodTip);
+
+            characterGroup.position.set(0, 0, 1.5);
+            scene.add(characterGroup);
+        }
+
+        function buildFishingLine() {
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)
+            ]);
+            fishingLine = new THREE.Line(lineGeo, lineMat);
+            scene.add(fishingLine);
+
+            const bobberGeo = new THREE.SphereGeometry(0.22, 12, 12);
+            const bobberMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2 });
+            floatBobber = new THREE.Mesh(bobberGeo, bobberMat);
+            floatBobber.visible = false;
+            scene.add(floatBobber);
+        }
+
+        /* ANIMATION & PHYSICAL STRAIN SIMULATION */
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.003;
+
+            // Ocean Wave Displacement
+            if (oceanMesh) {
+                const pos = oceanMesh.geometry.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    const u = pos.getX(i);
+                    const v = pos.getY(i);
+                    pos.setZ(i, Math.sin(u * 0.15 + time) * 0.2 + Math.cos(v * 0.15 + time) * 0.2);
+                }
+                oceanMesh.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Shore Movement Controls
+            if (!state.isFishing) {
+                if (keyState['a'] || keyState['arrowleft']) moveCharacter(-0.12);
+                if (keyState['d'] || keyState['arrowright']) moveCharacter(0.12);
+            }
+
+            // Realistic Fishing Fight & Body Strain Mechanics
+            if (state.isFishing) {
+                if (state.isReeling) {
+                    state.tension += 0.85;
+                    state.fishDistance = Math.max(0, state.fishDistance - (0.18 + state.currentRod.power * 0.006));
+
+                    // REALISTIC IK-LIKE STRAIN POSTURE: Leaning back hard against fish pull
+                    characterGroup.rotation.x = -0.22;
+                    characterGroup.rotation.z = Math.sin(time * 12) * 0.04;
+                    rodMesh.rotation.x = Math.PI / 3.8 + (state.tension * 0.006); // Dynamic rod bending
+                    
+                    // Bent knees pose
+                    leftLeg.rotation.x = 0.3;
+                    rightLeg.rotation.x = 0.3;
+                } else {
+                    state.tension = Math.max(0, state.tension - 0.55);
+                    characterGroup.rotation.x = 0;
+                    characterGroup.rotation.z = 0;
+                    rodMesh.rotation.x = Math.PI / 3;
+                    leftLeg.rotation.x = 0;
+                    rightLeg.rotation.x = 0;
+                }
+
+                document.getElementById('tension-bar').style.width = `${Math.min(100, state.tension)}%`;
+                document.getElementById('fish-distance').innerText = `Khoảng Cách: ${Math.round(state.fishDistance)}m`;
+
+                // Ultimate Skill Charging
+                if (state.tension >= 30 && state.tension <= 70) {
+                    state.ultCharge = Math.min(100, state.ultCharge + 0.35);
+                    const ultBtn = document.getElementById('btn-ult');
+                    if (state.ultCharge >= 100) {
+                        ultBtn.disabled = false;
+                        ultBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                    }
+                }
+
+                // Win/Loss Condition
+                if (state.tension >= 100) {
+                    resetFishingState();
+                    alert("Lực căng quá tải - Dây câu đã bị đứt!");
+                } else if (state.fishDistance <= 0) {
+                    catchFishSuccess();
+                }
+
+                // Fishing Line Attach
+                if (rodTip && floatBobber) {
+                    const tipWorldPos = new THREE.Vector3();
+                    rodTip.getWorldPosition(tipWorldPos);
+
+                    const linePositions = fishingLine.geometry.attributes.position;
+                    linePositions.setXYZ(0, tipWorldPos.x, tipWorldPos.y, tipWorldPos.z);
+                    linePositions.setXYZ(1, floatBobber.position.x, floatBobber.position.y + Math.sin(time * 3) * 0.1, floatBobber.position.z);
+                    linePositions.needsUpdate = true;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function moveCharacter(deltaX) {
+            state.charPositionX = THREE.MathUtils.clamp(state.charPositionX + deltaX, -9, 9);
+            characterGroup.position.x = state.charPositionX;
+        }
+
+        /* GAMEPLAY EVENTS */
+        function handleCast() {
+            if (state.isFishing) return;
+
+            playSfx('cast');
+            state.isFishing = true;
+            state.tension = 20;
+            state.fishDistance = 50;
+            state.ultCharge = 0;
+
+            state.targetFish = rollFishTarget();
+
+            floatBobber.position.set(characterGroup.position.x, 0, -14);
+            floatBobber.visible = true;
+            fishingLine.visible = true;
+
+            document.getElementById('fishing-hud').classList.remove('hidden');
+            document.getElementById('fishing-hud').classList.add('flex');
+            document.getElementById('fish-target-name').innerText = state.targetFish.name;
+            document.getElementById('btn-cast').classList.add('hidden');
+        }
+
+        function rollFishTarget() {
+            const legendProb = 0.05 * state.currentBait.legendBoost * (1 + state.currentChar.legendBonus);
+            const roll = Math.random();
+
+            if (roll < legendProb) {
+                return FISH_SPECIES.find(f => f.tier === 'Legend');
+            } else if (roll < legendProb + 0.22) {
+                const mythicList = FISH_SPECIES.filter(f => f.tier === 'Mythic');
+                return mythicList[Math.floor(Math.random() * mythicList.length)];
+            } else if (roll < legendProb + 0.55) {
+                const epicList = FISH_SPECIES.filter(f => f.tier === 'Epic');
+                return epicList[Math.floor(Math.random() * epicList.length)];
+            } else {
+                const rareList = FISH_SPECIES.filter(f => f.tier === 'Hiếm');
+                return rareList[Math.floor(Math.random() * rareList.length)];
+            }
+        }
+
+        function triggerUltimateStrike() {
+            if (state.ultCharge < 100 || !state.isFishing) return;
+            playSfx('ult');
+            state.fishDistance = Math.max(0, state.fishDistance - 40);
+            state.tension = Math.max(10, state.tension - 25);
+            state.ultCharge = 0;
+
+            const ultBtn = document.getElementById('btn-ult');
+            ultBtn.disabled = true;
+            ultBtn.classList.add('opacity-40', 'cursor-not-allowed');
+
+            document.body.classList.add('shake-active');
+            setTimeout(() => document.body.classList.remove('shake-active'), 500);
+        }
+
+        function catchFishSuccess() {
+            playSfx('catch');
+
+            const auraEarned = Math.round(state.targetFish.aura * (1 + state.currentChar.luck));
+            state.aura += auraEarned;
+            document.getElementById('aura-count').innerText = state.aura;
+
+            // Explosion Particles
+            createExplosionParticles(floatBobber.position);
+
+            const overlay = document.getElementById('catch-overlay');
+            const card = document.getElementById('catch-card');
+            document.getElementById('catch-name').innerText = state.targetFish.name;
+            document.getElementById('catch-tier').innerText = state.targetFish.tier;
+            document.getElementById('catch-weight').innerText = `Trọng lượng: ${state.targetFish.baseWeight.toLocaleString()} KG`;
+            document.getElementById('catch-aura').innerText = `+${auraEarned} Aura`;
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('scale-0'), 50);
+
+            setTimeout(() => {
+                card.classList.add('scale-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    resetFishingState();
+                }, 300);
+            }, 2500);
+        }
+
+        function createExplosionParticles(pos) {
+            const count = 70;
+            const geo = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            for (let i = 0; i < count; i++) {
+                positions.push(pos.x, pos.y + 1, pos.z);
+                colors.push(1, Math.random() * 0.8, 0);
+            }
+
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const mat = new THREE.PointsMaterial({ size: 0.45, vertexColors: true, transparent: true });
+            const pSystem = new THREE.Points(geo, mat);
+            scene.add(pSystem);
+
+            setTimeout(() => scene.remove(pSystem), 1000);
+        }
+
+        function resetFishingState() {
+            state.isFishing = false;
+            state.isReeling = false;
+            floatBobber.visible = false;
+            fishingLine.visible = false;
+
+            document.getElementById('fishing-hud').classList.add('hidden');
+            document.getElementById('btn-cast').classList.remove('hidden');
+        }
+
+        /* MODAL INTERFACES */
+        function toggleModal(id) {
+            playSfx('click');
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                if (id === 'modal-char') renderCharList();
+                if (id === 'modal-shop') renderShopList();
+                if (id === 'modal-map') renderMapList();
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        function renderCharList() {
+            document.getElementById('char-grid').innerHTML = CHARACTERS.map(c => `
+                <div class="glass-panel p-4 rounded-2xl flex flex-col justify-between border ${state.currentChar.id === c.id ? 'border-cyan-400 bg-cyan-500/10' : 'border-white/10'}">
+                    <div>
+                        <h3 class="text-lg font-bold text-cyan-300 font-orbitron">${c.name}</h3>
+                        <p class="text-xs text-gray-300 my-2">${c.desc}</p>
+                    </div>
+                    <button onclick="selectChar('${c.id}')" class="mt-2 text-xs font-bold py-2 rounded-xl ${state.currentChar.id === c.id ? 'bg-cyan-500 text-black' : 'btn-neon-blue text-white'}">
+                        ${state.currentChar.id === c.id ? 'Đang Chọn' : 'Chọn Nhân Vật'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectChar(id) {
+            state.currentChar = CHARACTERS.find(c => c.id === id);
+            document.getElementById('current-char-name').innerText = state.currentChar.name;
+            buildRiggedCharacter();
+            toggleModal('modal-char');
+        }
+
+        function switchShopTab(tab) {
+            playSfx('click');
+            const rodsContent = document.getElementById('shop-content-rods');
+            const baitsContent = document.getElementById('shop-content-baits');
+            const tabRods = document.getElementById('tab-btn-rods');
+            const tabBaits = document.getElementById('tab-btn-baits');
+
+            if (tab === 'rods') {
+                rodsContent.classList.remove('hidden');
+                baitsContent.classList.add('hidden');
+                tabRods.className = "pb-2 font-bold border-b-2 border-amber-400 text-amber-400";
+                tabBaits.className = "pb-2 font-bold text-gray-400 hover:text-white";
+            } else {
+                rodsContent.classList.add('hidden');
+                baitsContent.classList.remove('hidden');
+                tabBaits.className = "pb-2 font-bold border-b-2 border-amber-400 text-amber-400";
+                tabRods.className = "pb-2 font-bold text-gray-400 hover:text-white";
+            }
+        }
+
+        function renderShopList() {
+            document.getElementById('shop-content-rods').innerHTML = RODS.map(r => {
+                const isUnlocked = state.unlockedRods.includes(r.id);
+                const isEquipped = state.currentRod.id === r.id;
+                return `
+                    <div class="glass-panel p-4 rounded-2xl border ${isEquipped ? 'border-amber-400 bg-amber-500/10' : 'border-white/10'}">
+                        <h4 class="font-bold text-amber-300 font-orbitron">${r.name}</h4>
+                        <p class="text-xs text-gray-300 my-1">Lực Kéo: +${r.power}</p>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-amber-400 font-bold text-sm"><i class="fa-solid fa-gem"></i> ${r.cost} Aura</span>
+                            ${isEquipped ? '<span class="text-xs font-bold text-amber-400">Đã Trang Bị</span>' : 
+                              isUnlocked ? `<button onclick="equipRod('${r.id}')" class="btn-neon-orange text-xs px-3 py-1.5 rounded-lg">Trang Bị</button>` :
+                              `<button onclick="buyRod('${r.id}')" class="btn-neon-blue text-xs px-3 py-1.5 rounded-lg">Mua Ngay</button>`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('shop-content-baits').innerHTML = BAITS.map(b => {
+                const isSelected = state.currentBait.id === b.id;
+                return `
+                    <div class="glass-panel p-4 rounded-2xl border ${isSelected ? 'border-amber-400 bg-amber-500/10' : 'border-white/10'}">
+                        <h4 class="font-bold text-amber-300 font-orbitron">${b.name}</h4>
+                        <p class="text-xs text-gray-300 my-1">${b.desc}</p>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-amber-400 font-bold text-sm"><i class="fa-solid fa-gem"></i> ${b.cost} Aura</span>
+                            <button onclick="selectBait('${b.id}')" class="text-xs font-bold px-3 py-1.5 rounded-lg ${isSelected ? 'bg-amber-400 text-black' : 'btn-neon-orange'}">
+                                ${isSelected ? 'Đang Dùng' : 'Chọn Mồi'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function equipRod(id) {
+            state.currentRod = RODS.find(r => r.id === id);
+            buildRiggedCharacter();
+            renderShopList();
+        }
+
+        function buyRod(id) {
+            const rod = RODS.find(r => r.id === id);
+            if (state.aura >= rod.cost) {
+                state.aura -= rod.cost;
+                state.unlockedRods.push(rod.id);
+                document.getElementById('aura-count').innerText = state.aura;
+                equipRod(id);
+            } else {
+                alert("Bạn không đủ tiền Aura!");
+            }
+        }
+
+        function selectBait(id) {
+            const bait = BAITS.find(b => b.id === id);
+            if (state.aura >= bait.cost) {
+                state.aura -= bait.cost;
+                state.currentBait = bait;
+                document.getElementById('aura-count').innerText = state.aura;
+                renderShopList();
+            } else {
+                alert("Bạn không đủ tiền Aura!");
+            }
+        }
+
+        function renderMapList() {
+            document.getElementById('map-grid').innerHTML = MAPS.map(m => `
+                <div class="glass-panel p-4 rounded-2xl flex justify-between items-center border ${state.currentMap.id === m.id ? 'border-emerald-400 bg-emerald-500/10' : 'border-white/10'}">
+                    <div>
+                        <h3 class="font-bold text-emerald-300 font-orbitron">${m.name}</h3>
+                        <p class="text-xs text-gray-300">${m.desc}</p>
+                    </div>
+                    <button onclick="selectMap('${m.id}')" class="text-xs font-bold px-4 py-2 rounded-xl ${state.currentMap.id === m.id ? 'bg-emerald-400 text-black' : 'btn-neon-blue'}">
+                        ${state.currentMap.id === m.id ? 'Đang Ở Đây' : 'Di Chuyển'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectMap(id) {
+            state.currentMap = MAPS.find(m => m.id === id);
+            buildEnvironment();
+            toggleModal('modal-map');
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = () => {
+            init3D();
+
+            const btnPull = document.getElementById('btn-pull');
+            btnPull.addEventListener('mousedown', () => state.isReeling = true);
+            btnPull.addEventListener('mouseup', () => state.isReeling = false);
+            btnPull.addEventListener('touchstart', (e) => { e.preventDefault(); state.isReeling = true; });
+            btnPull.addEventListener('touchend', (e) => { e.preventDefault(); state.isReeling = false; });
+
+            document.getElementById('btn-ult').addEventListener('click', triggerUltimateStrike);
+
+            const btnLeft = document.getElementById('btn-move-left');
+            const btnRight = document.getElementById('btn-move-right');
+            btnLeft.addEventListener('touchstart', () => moveCharacter(-0.35));
+            btnRight.addEventListener('touchstart', () => moveCharacter(0.35));
+            btnLeft.addEventListener('click', () => moveCharacter(-0.35));
+            btnRight.addEventListener('click', () => moveCharacter(0.35));
+        };
+    </script>
 </body>
 </html>
